@@ -1,0 +1,13 @@
+# Todos los días 1-100 existen automáticamente aunque no estén listados aquí.
+# Por defecto están vacíos; agrega commands/items a los días que quieras.
+# Ejemplo (NO habilitado):
+# days:
+#   '1':
+#     material: DIAMOND
+#     name: '&#55FFFF&lDía 1'
+#     lore: ['&7Regalo de bienvenida', '%status%']
+#     commands: ['eco give %player% 100']
+#     items:
+#       - material: DIAMOND
+#         amount: 2
+days: {}

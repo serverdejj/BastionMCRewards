@@ -1,0 +1,159 @@
+# BASTION MC | Todos los títulos, ítems, posiciones, textos, sonidos, permisos y premios son editables.
+# Color: &a, &l, &#FF5500. Degradados carácter por carácter: &#FF0000H&#EE1100o...
+# También admite <gradient:#FF0000:#FFFF00>Texto</gradient>.
+# Los premios están VACÍOS hasta que los configures aquí.
+settings:
+  daily-hours: 24
+  progressive-reset-if-missed: true
+  progressive-max-gap-hours: 48
+  progressive-days: 100
+  # Los grupos VIP deben recibir su nodo de permiso desde LuckPerms.
+  # En este plugin default es accesible por todos. Cada VIP también puede reclamar
+  # las categorías de rango cuyo permiso tenga.
+main-menu:
+  title: '&#FFD15B&lBASTION MC &8» &fMenú de recompensas'
+  rows: 3
+  filler:
+    enabled: true
+    material: GRAY_STAINED_GLASS_PANE
+    name: ' '
+  daily:
+    slot: 11
+    material: CHEST
+    name: '&#FFAD38&lRecompensas principales'
+    lore:
+      - '&7Premios diarios según tu rango.'
+      - '&eHaz clic para abrir el menú'
+  progressive:
+    slot: 15
+    material: CLOCK
+    name: '&#55E8FF&lRecompensas progresivas'
+    lore:
+      - '&7Una recompensa diaria para todos.'
+      - '&7Hasta el día &f100&7.'
+      - '&eHaz clic para abrir el menú'
+rank-menu:
+  title: '&#FFD15B&lRecompensas principales'
+  rows: 3
+  filler:
+    enabled: true
+    material: BLACK_STAINED_GLASS_PANE
+    name: ' '
+  back:
+    slot: 22
+    material: ARROW
+    name: '&eVolver'
+  locked-lore: '&cNo tienes permiso para reclamar este rango.'
+  ready-lore: '&a¡Haz clic para reclamar!'
+  waiting-lore: '&eDisponible en: &f%time%'
+  empty-lore: '&7Este rango todavía no tiene premios configurados.'
+progressive-menu:
+  title: '&#55E8FF&lRacha de recompensas &8- &f%page%'
+  rows: 6
+  reward-slots: [10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43]
+  filler:
+    enabled: true
+    material: GRAY_STAINED_GLASS_PANE
+    name: ' '
+  previous:
+    slot: 45
+    material: ARROW
+    name: '&ePágina anterior'
+  next:
+    slot: 53
+    material: ARROW
+    name: '&ePágina siguiente'
+  back:
+    slot: 49
+    material: BARRIER
+    name: '&cVolver'
+  available-lore: '&a¡Haz clic para reclamar!'
+  waiting-lore: '&ePodrás reclamar en: &f%time%'
+  locked-lore: '&cDebes reclamar los días anteriores.'
+  claimed-lore: '&aYa reclamaste este día.'
+  empty-lore: '&7Recompensa aún sin configurar.'
+  item-default:
+    material: BARREL
+    amount: 1
+    name: '&#55E8FF&lDía #%day%'
+    lore:
+      - '&7Progreso: &f%progress%&7/100'
+      - '%status%'
+messages:
+  prefix: '&#FFD15B&lBASTION MC &8» &r'
+  no-permission: '&cNo tienes acceso a esta recompensa.'
+  claimed: '&a¡Has reclamado la recompensa de &f%name%&a!'
+  progressive-claimed: '&a¡Reclamaste el día &f%day%&a de tu racha!'
+  not-ready: '&cTodavía no puedes reclamar. Disponible en: &e%time%'
+  empty: '&eEsta recompensa todavía no está configurada.'
+  locked: '&cDebes reclamar los días anteriores.'
+  reloaded: '&aArchivos YAML recargados.'
+  error: '&cNo se pudo entregar la recompensa. Contacta a un administrador.'
+  usage: '&eUsa /recompensas o /recompensas reload'
+  reset: '&cTu racha se reinició por dejar pasar demasiado tiempo.'
+sounds:
+  open: UI_BUTTON_CLICK
+  claim: ENTITY_PLAYER_LEVELUP
+  error: BLOCK_NOTE_BLOCK_BASS
+# Siete rangos, en orden. Cada uno tiene su propio enfriamiento de 24 h.
+# Premio: commands = comandos de consola con %player%; items = material y cantidad.
+# No agregues '/' al principio de los comandos.
+ranks:
+  default:
+    slot: 10
+    permission: bastionrewards.rank.default
+    material: COAL
+    name: '&7&lDEFAULT'
+    lore: ['&7Recompensa diaria del rango DEFAULT', '%status%']
+    commands: []
+    items: []
+  magma:
+    slot: 11
+    permission: bastionrewards.rank.magma
+    material: MAGMA_BLOCK
+    name: '&#FF5500&lMAGMA'
+    lore: ['&7Recompensa diaria del rango MAGMA', '%status%']
+    commands: []
+    items: []
+  piglin:
+    slot: 12
+    permission: bastionrewards.rank.piglin
+    material: GOLD_INGOT
+    name: '&#FFCF52&lPIGLIN'
+    lore: ['&7Recompensa diaria del rango PIGLIN', '%status%']
+    commands: []
+    items: []
+  carmesi:
+    slot: 13
+    permission: bastionrewards.rank.carmesi
+    material: CRIMSON_FUNGUS
+    name: '&#DC3155&lCARMESÍ'
+    lore: ['&7Recompensa diaria del rango CARMESÍ', '%status%']
+    commands: []
+    items: []
+  basalto:
+    slot: 14
+    permission: bastionrewards.rank.basalto
+    material: BASALT
+    name: '&#8A8B96&lBASALTO'
+    lore: ['&7Recompensa diaria del rango BASALTO', '%status%']
+    commands: []
+    items: []
+  vikingo:
+    slot: 15
+    permission: bastionrewards.rank.vikingo
+    material: NETHERITE_AXE
+    name: '&#4AB5FF&lVIKINGO'
+    lore: ['&7Recompensa diaria del rango VIKINGO', '%status%']
+    commands: []
+    items: []
+  bastion:
+    slot: 16
+    permission: bastionrewards.rank.bastion
+    material: NETHER_STAR
+    name: '&#FFD15B&lBASTION'
+    lore: ['&7Recompensa diaria del rango BASTION', '%status%']
+    commands: []
+    items: []
+# Recompensas progresivas: empieza en el día 1, llega hasta 100.
+# Puedes personalizar individualmente cada día en progressive.yml.

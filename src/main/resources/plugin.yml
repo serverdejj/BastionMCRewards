@@ -1,0 +1,16 @@
+name: BastionMCRewards
+version: 1.0.0
+main: lat.bastionmc.rewards.BastionMCRewards
+api-version: '1.21'
+author: BASTION MC
+softdepend: [LuckPerms]
+commands:
+  recompensas:
+    description: Abre las recompensas de BASTION MC
+    aliases: [rewards, recompensa]
+    usage: /recompensas
+permissions:
+  bastionrewards.admin:
+    default: op
+  bastionrewards.rank.default:
+    default: true
