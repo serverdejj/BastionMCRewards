@@ -54,3 +54,10 @@ Sube **el contenido** de este ZIP a la raíz de un repositorio GitHub nuevo. En 
 - Si se apaga el servidor durante un comando externo, la ejecución de comandos no está transaccionada; haz una copia de seguridad de `players.yml`.
 - La entrega de ítems simples comprueba espacio en inventario antes de otorgar premios. Para ítems especiales o personalizados, usa comandos de consola configurables de los plugins que los suministran.
 - No se ha probado en tu servidor real. Prueba primero en un entorno de desarrollo antes de habilitar recompensas valiosas.
+
+## 1.0.1 — Protección de los menús, brillo y cabezas
+- Todos los inventarios de /recompensas usan un InventoryHolder exclusivo.
+- Clics, shift-click, teclas numéricas, intercambio con offhand y arrastres se cancelan en los inventarios del plugin, para usuarios normales y OP.
+- El brillo aparece automáticamente en los premios reclamables que tengan recompensas configuradas (`glow-when-claimable: true`). Puedes forzar brillo con `glow: true` para ítems de menú.
+- Sustituye cualquier icono con `material: PLAYER_HEAD` y `head-owner: NombreDelJugador` o `head-uuid: UUID`. Sirve en `config.yml` y días individuales de `progressive.yml`.
+- Si ya tienes `config.yml` personalizado, no lo borres: las nuevas opciones son opcionales y tienen valores predeterminados.

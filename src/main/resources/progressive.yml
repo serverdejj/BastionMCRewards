@@ -1,5 +1,10 @@
 # Todos los días 1-100 existen automáticamente aunque no estén listados aquí.
 # Por defecto están vacíos; agrega commands/items a los días que quieras.
+# Para una cabeza personalizada en cualquier día:
+#   material: PLAYER_HEAD
+#   head-owner: NombreDelJugador
+#   glow-when-claimable: true
+# El brillo solo se activa cuando ese día tiene premios y es reclamable.
 # Ejemplo (NO habilitado):
 # days:
 #   '1':

@@ -2,6 +2,15 @@
 # Color: &a, &l, &#FF5500. Degradados carácter por carácter: &#FF0000H&#EE1100o...
 # También admite <gradient:#FF0000:#FFFF00>Texto</gradient>.
 # Los premios están VACÍOS hasta que los configures aquí.
+# Los menús NO permiten sacar ni introducir ítems, incluso sin OP.
+# Cada ítem admite:
+#   glow: true                     -> brillo permanente
+#   glow-when-claimable: true       -> brillo automático si se puede reclamar (predeterminado)
+#   material: PLAYER_HEAD          -> icono de cabeza de jugador
+#   head-owner: Notch              -> nombre de jugador propietario de la skin
+#   head-uuid: 069a79f4-44e9-4726-a5be-fca90e38aaf5   -> alternativa opcional
+# La cabeza necesita poder resolver la skin del dueño; puede requerir conexión/caché.
+
 settings:
   daily-hours: 24
   progressive-reset-if-missed: true
@@ -73,6 +82,9 @@ progressive-menu:
   claimed-lore: '&aYa reclamaste este día.'
   empty-lore: '&7Recompensa aún sin configurar.'
   item-default:
+    glow-when-claimable: true
+    # material: PLAYER_HEAD
+    # head-owner: NombreDelJugador
     material: BARREL
     amount: 1
     name: '&#55E8FF&lDía #%day%'
@@ -111,6 +123,10 @@ ranks:
     slot: 11
     permission: bastionrewards.rank.magma
     material: MAGMA_BLOCK
+    glow-when-claimable: true
+    # Para mostrar una cabeza en vez de un bloque:
+    # material: PLAYER_HEAD
+    # head-owner: NombreDelJugador
     name: '&#FF5500&lMAGMA'
     lore: ['&7Recompensa diaria del rango MAGMA', '%status%']
     commands: []

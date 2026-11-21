@@ -9,6 +9,8 @@ import org.bukkit.event.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import java.io.*;
@@ -19,8 +21,21 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
     private FileConfiguration progressCfg, state;
     private File stateFile;
     private static final String[] RANKS = {"default","magma","piglin","carmesi","basalto","vikingo","bastion"};
-    private final Map<UUID, View> views = new HashMap<>();
-    private record View(String type, int page) {}
+    // Identidad del inventario: no depende de títulos editables ni del orden de eventos al abrir otro GUI.
+    private static final class RewardsHolder implements InventoryHolder {
+        final String type;
+        final int page;
+        private Inventory inventory;
+        RewardsHolder(String type, int page) { this.type=type; this.page=page; }
+        void setInventory(Inventory inv) { inventory=inv; }
+        @Override public Inventory getInventory() { return inventory; }
+    }
+    private Inventory inv(String title, int rows, String type, int page) {
+        RewardsHolder holder=new RewardsHolder(type,page);
+        Inventory inv=Bukkit.createInventory(holder,Math.max(1,Math.min(6,rows))*9,color(title));
+        holder.setInventory(inv);
+        return inv;
+    }
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -76,14 +91,24 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
         m.appendTail(hex); return ChatColor.translateAlternateColorCodes('&',hex.toString());
     }
     private Material mat(String name,Material fallback) { Material m=Material.matchMaterial(name==null?"":name); return m==null?fallback:m; }
-    private ItemStack item(String path, FileConfiguration cfg, Material def, String name, List<String> lore, Map<String,String> vars) {
+    private ItemStack item(String path, FileConfiguration cfg, Material def, String name, List<String> lore, Map<String,String> vars, boolean claimable) {
         ItemStack it=new ItemStack(mat(cfg.getString(path+".material"),def), Math.max(1,Math.min(64,cfg.getInt(path+".amount",1))));
         ItemMeta im=it.getItemMeta();
         im.setDisplayName(color(repl(cfg.getString(path+".name",name),vars)));
         List<String> lines=cfg.isList(path+".lore")?cfg.getStringList(path+".lore"):lore;
-        im.setLore(lines.stream().map(s->color(repl(s,vars))).toList()); it.setItemMeta(im); return it;
+        im.setLore(lines.stream().map(s->color(repl(s,vars))).toList());
+        if (im instanceof SkullMeta skull) {
+            String owner=cfg.getString(path+".head-owner", "").trim();
+            String uuid=cfg.getString(path+".head-uuid", "").trim();
+            if (!uuid.isBlank()) {
+                try { skull.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(uuid))); }
+                catch(IllegalArgumentException ex) { getLogger().warning("UUID de cabeza incorrecta en "+path); }
+            } else if(!owner.isBlank()) skull.setOwningPlayer(Bukkit.getOfflinePlayer(owner));
+        }
+        boolean glow=claimable ? cfg.getBoolean(path+".glow-when-claimable",true) : cfg.getBoolean(path+".glow",false);
+        im.setEnchantmentGlintOverride(glow);
+        it.setItemMeta(im); return it;
     }
-    private Inventory inv(String title,int rows){ return Bukkit.createInventory(null, Math.max(1,Math.min(6,rows))*9,color(title)); }
     private void fill(Inventory inv,String path){
         if(!getConfig().getBoolean(path+".filler.enabled",false)) return;
         Material material=mat(getConfig().getString(path+".filler.material"),Material.GRAY_STAINED_GLASS_PANE);
@@ -92,24 +117,24 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
     }
     private void set(Inventory inv,int slot,ItemStack it){ if(slot>=0&&slot<inv.getSize())inv.setItem(slot,it); }
     private void openMain(Player p){
-        String path="main-menu"; Inventory inv=inv(getConfig().getString(path+".title","Recompensas"),getConfig().getInt(path+".rows",3));
-        set(inv,getConfig().getInt(path+".daily.slot",11),item(path+".daily",getConfig(),Material.CHEST,"&ePrincipales",List.of(),Map.of()));
-        set(inv,getConfig().getInt(path+".progressive.slot",15),item(path+".progressive",getConfig(),Material.CLOCK,"&bProgresivas",List.of(),Map.of()));
-        fill(inv,path); views.put(p.getUniqueId(),new View("main",0));p.openInventory(inv);sound(p,"open");
+        String path="main-menu"; Inventory inv=inv(getConfig().getString(path+".title","Recompensas"),getConfig().getInt(path+".rows",3),"main",0);
+        set(inv,getConfig().getInt(path+".daily.slot",11),item(path+".daily",getConfig(),Material.CHEST,"&ePrincipales",List.of(),Map.of(),false));
+        set(inv,getConfig().getInt(path+".progressive.slot",15),item(path+".progressive",getConfig(),Material.CLOCK,"&bProgresivas",List.of(),Map.of(),false));
+        fill(inv,path); p.openInventory(inv);sound(p,"open");
     }
-    private boolean entitled(Player p,String rank){String perm=getConfig().getString("ranks."+rank+".permission","bastionrewards.rank."+rank);return p.hasPermission(perm);}
+    private boolean entitled(Player p,String rank){if(rank.equals("default"))return true;String perm=getConfig().getString("ranks."+rank+".permission","bastionrewards.rank."+rank);return p.hasPermission(perm);}
     private long cooldown(){return Math.max(1,getConfig().getLong("settings.daily-hours",24))*3600000L;}
     private String time(long millis){long secs=Math.max(0,(millis+999)/1000),h=secs/3600,m=(secs%3600)/60;return h+"h "+m+"m";}
     private boolean hasRewards(ConfigurationSection sec){return sec!=null&&(!sec.getStringList("commands").isEmpty()||!sec.getMapList("items").isEmpty());}
     private void openRanks(Player p){
-        String path="rank-menu"; Inventory inv=inv(getConfig().getString(path+".title","Principales"),getConfig().getInt(path+".rows",3));
+        String path="rank-menu"; Inventory inv=inv(getConfig().getString(path+".title","Principales"),getConfig().getInt(path+".rows",3),"ranks",0);
         for(String rank:RANKS){String base="ranks."+rank; ConfigurationSection sec=getConfig().getConfigurationSection(base);if(sec==null)continue;
             long last=state.getLong("players."+p.getUniqueId()+".rank."+rank,0),remain=last+cooldown()-System.currentTimeMillis();
             String status=!entitled(p,rank)?getConfig().getString(path+".locked-lore"):!hasRewards(sec)?getConfig().getString(path+".empty-lore"):remain>0?getConfig().getString(path+".waiting-lore"):getConfig().getString(path+".ready-lore");
-            set(inv,getConfig().getInt(base+".slot",10),item(base,getConfig(),Material.CHEST,rank,List.of("%status%"),Map.of("status",status.replace("%time%",time(remain)))));
+            set(inv,getConfig().getInt(base+".slot",10),item(base,getConfig(),Material.CHEST,rank,List.of("%status%"),Map.of("status",status.replace("%time%",time(remain))), entitled(p,rank) && hasRewards(sec) && remain<=0));
         }
-        set(inv,getConfig().getInt(path+".back.slot",22),item(path+".back",getConfig(),Material.ARROW,"Volver",List.of(),Map.of()));fill(inv,path);
-        views.put(p.getUniqueId(),new View("ranks",0));p.openInventory(inv);sound(p,"open");
+        set(inv,getConfig().getInt(path+".back.slot",22),item(path+".back",getConfig(),Material.ARROW,"Volver",List.of(),Map.of(),false));fill(inv,path);
+        p.openInventory(inv);sound(p,"open");
     }
     private int maxDays(){return Math.max(1,Math.min(100,getConfig().getInt("settings.progressive-days",100)));}
     private int[] rewardSlots(){ List<Integer> list=getConfig().getIntegerList("progressive-menu.reward-slots");if(list.isEmpty())list=List.of(10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43);return list.stream().mapToInt(Integer::intValue).toArray(); }
@@ -124,7 +149,7 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
     private ConfigurationSection dayCfg(int day){return progressCfg.getConfigurationSection("days."+day);}
     private void openProgress(Player p,int requestedPage){
         checkReset(p);String path="progressive-menu";int[] slots=rewardSlots();int totalPages=(maxDays()+slots.length-1)/slots.length;int page=Math.max(0,Math.min(totalPages-1,requestedPage));
-        Inventory inv=inv(repl(getConfig().getString(path+".title","Racha %page%"),Map.of("page",String.valueOf(page+1))),getConfig().getInt(path+".rows",6));
+        Inventory inv=inv(repl(getConfig().getString(path+".title","Racha %page%"),Map.of("page",String.valueOf(page+1))),getConfig().getInt(path+".rows",6),"progress",page);
         int next=nextDay(p); long remain=lastProgress(p)+cooldown()-System.currentTimeMillis();
         for(int i=0;i<slots.length;i++) {int day=page*slots.length+i+1;if(day>maxDays())break;
             String status=day<next?getConfig().getString(path+".claimed-lore"):day>next?getConfig().getString(path+".locked-lore"):!hasRewards(dayCfg(day))?getConfig().getString(path+".empty-lore"):remain>0?getConfig().getString(path+".waiting-lore"):getConfig().getString(path+".available-lore");
@@ -132,19 +157,21 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
             String base="days."+day;
             // User-specific day display values override defaults.
             FileConfiguration display=progressCfg.isConfigurationSection(base)?progressCfg:getConfig();String cfgPath=display==progressCfg?base:path+".item-default";
-            set(inv,slots[i],item(cfgPath,display,Material.BARREL,"&bDía #"+day,List.of("%status%"),vars));
+            set(inv,slots[i],item(cfgPath,display,Material.BARREL,"&bDía #"+day,List.of("%status%"),vars, day==next && hasRewards(dayCfg(day)) && remain<=0));
         }
-        if(page>0)set(inv,getConfig().getInt(path+".previous.slot",45),item(path+".previous",getConfig(),Material.ARROW,"Anterior",List.of(),Map.of()));
-        if(page+1<totalPages)set(inv,getConfig().getInt(path+".next.slot",53),item(path+".next",getConfig(),Material.ARROW,"Siguiente",List.of(),Map.of()));
-        set(inv,getConfig().getInt(path+".back.slot",49),item(path+".back",getConfig(),Material.BARRIER,"Volver",List.of(),Map.of()));fill(inv,path);
-        views.put(p.getUniqueId(),new View("progress",page));p.openInventory(inv);sound(p,"open");
+        if(page>0)set(inv,getConfig().getInt(path+".previous.slot",45),item(path+".previous",getConfig(),Material.ARROW,"Anterior",List.of(),Map.of(),false));
+        if(page+1<totalPages)set(inv,getConfig().getInt(path+".next.slot",53),item(path+".next",getConfig(),Material.ARROW,"Siguiente",List.of(),Map.of(),false));
+        set(inv,getConfig().getInt(path+".back.slot",49),item(path+".back",getConfig(),Material.BARRIER,"Volver",List.of(),Map.of(),false));fill(inv,path);
+        p.openInventory(inv);sound(p,"open");
     }
     private void sound(Player p,String key){try{p.playSound(p.getLocation(),org.bukkit.Registry.SOUNDS.get(NamespacedKey.minecraft(getConfig().getString("sounds."+key,"UI_BUTTON_CLICK").toLowerCase(Locale.ROOT).replace('_','.')) ),0.7f,1f);}catch(Exception ignored){}}
-    @EventHandler public void onClose(InventoryCloseEvent e){if(e.getPlayer() instanceof Player p)views.remove(p.getUniqueId());}
-    @EventHandler public void onQuit(org.bukkit.event.player.PlayerQuitEvent e){views.remove(e.getPlayer().getUniqueId());}
-    @EventHandler public void onClick(InventoryClickEvent e){
-        if(!(e.getWhoClicked() instanceof Player p))return;View v=views.get(p.getUniqueId());if(v==null)return;
-        e.setCancelled(true);if(e.getClickedInventory()!=e.getView().getTopInventory())return;
+    @EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled=false)
+    public void onClick(InventoryClickEvent e){
+        if(!(e.getWhoClicked() instanceof Player p))return;
+        if(!(e.getView().getTopInventory().getHolder() instanceof RewardsHolder v))return;
+        // Cancela todos los clics (también shift-click, teclas numéricas, offhand y clics en el inventario inferior).
+        e.setCancelled(true);
+        if(e.getClickedInventory()!=e.getView().getTopInventory())return;
         int slot=e.getRawSlot();if(slot<0||slot>=e.getView().getTopInventory().getSize())return;
         if(v.type.equals("main")){
             if(slot==getConfig().getInt("main-menu.daily.slot",11))openRanks(p);
@@ -159,7 +186,10 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
             int[] slots=rewardSlots();for(int i=0;i<slots.length;i++)if(slot==slots[i]){claimProgress(p,v.page*slots.length+i+1);return;}
         }
     }
-    @EventHandler public void onDrag(InventoryDragEvent e){if(views.containsKey(e.getWhoClicked().getUniqueId()))e.setCancelled(true);}
+    @EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled=false)
+    public void onDrag(InventoryDragEvent e){
+        if(e.getView().getTopInventory().getHolder() instanceof RewardsHolder)e.setCancelled(true);
+    }
     private void claimRank(Player p,String rank){
         if(!entitled(p,rank)){tell(p,"no-permission");sound(p,"error");return;}
         ConfigurationSection cfg=getConfig().getConfigurationSection("ranks."+rank);
