@@ -243,7 +243,7 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
         String key="players."+p.getUniqueId()+".rank."+rank;long remain=state.getLong(key,0)+cooldown()-System.currentTimeMillis();
         if(remain>0){tell(p,"not-ready",Map.of("time",time(remain)));sound(p,"error");return;}
         if(!deliver(p,cfg)){tell(p,"error");return;}
-        state.set(key,System.currentTimeMillis());saveState();tell(p,"claimed",Map.of("name",rank.toUpperCase(Locale.ROOT)));sound(p,"claim");openRanks(p);
+        state.set(key,System.currentTimeMillis());saveState();tell(p,"claimed",Map.of("name",ChatColor.stripColor(color(cfg.getString("name",rank.equals("default")?"USUARIO":rank.toUpperCase(Locale.ROOT))))));sound(p,"claim");openRanks(p);
     }
     private void claimProgress(Player p,int day){
         checkReset(p);if(day<1||day>maxDays()||day!=nextDay(p)){tell(p,"locked");sound(p,"error");return;}

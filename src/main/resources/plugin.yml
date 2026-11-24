@@ -1,5 +1,5 @@
 name: BastionMCRewards
-version: 1.0.2
+version: 1.0.3
 main: lat.bastionmc.rewards.BastionMCRewards
 api-version: '1.21'
 author: BASTION MC
