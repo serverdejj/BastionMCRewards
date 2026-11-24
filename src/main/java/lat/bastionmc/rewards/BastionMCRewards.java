@@ -25,6 +25,7 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
     private static final class RewardsHolder implements InventoryHolder {
         final String type;
         final int page;
+        ItemStack selected;
         private Inventory inventory;
         RewardsHolder(String type, int page) { this.type=type; this.page=page; }
         void setInventory(Inventory inv) { inventory=inv; }
@@ -61,14 +62,20 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
         }
         if (!(sender instanceof Player player)) { sender.sendMessage("Solo jugadores pueden abrir el menu. Usa /recompensas reload."); return true; }
         if (args.length == 0) { openMain(player); return true; }
+        if (args.length == 2 && args[0].equalsIgnoreCase("edit") && args[1].equalsIgnoreCase("principales")) {
+            if (!player.hasPermission("bastionrewards.admin")) { tell(player,"no-permission"); return true; }
+            openRankEditor(player); return true;
+        }
         if (args[0].equalsIgnoreCase("principales")) { openRanks(player); return true; }
         if (args[0].equalsIgnoreCase("progresivas")) { openProgress(player,0); return true; }
         tell(sender,"usage"); return true;
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
+        if(args.length==2 && args[0].equalsIgnoreCase("edit") && sender.hasPermission("bastionrewards.admin"))
+            return "principales".startsWith(args[1].toLowerCase(Locale.ROOT)) ? List.of("principales") : List.of();
         if(args.length!=1) return List.of();
         List<String> words=new ArrayList<>(List.of("principales","progresivas"));
-        if(sender.hasPermission("bastionrewards.admin")) words.add("reload");
+        if(sender.hasPermission("bastionrewards.admin")) words.addAll(List.of("reload","edit"));
         return words.stream().filter(s->s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
     private void tell(CommandSender sender,String key){ sender.sendMessage(color(getConfig().getString("messages.prefix","")+getConfig().getString("messages."+key,""))); }
@@ -93,11 +100,13 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
     private Material mat(String name,Material fallback) { Material m=Material.matchMaterial(name==null?"":name); return m==null?fallback:m; }
     private ItemStack item(String path, FileConfiguration cfg, Material def, String name, List<String> lore, Map<String,String> vars, boolean claimable) {
         ItemStack it=new ItemStack(mat(cfg.getString(path+".material"),def), Math.max(1,Math.min(64,cfg.getInt(path+".amount",1))));
+        ItemStack custom=cfg.getItemStack(path+".custom-icon");
+        if(custom!=null && !custom.getType().isAir()) { it=custom.clone(); it.setAmount(1); }
         ItemMeta im=it.getItemMeta();
         im.setDisplayName(color(repl(cfg.getString(path+".name",name),vars)));
         List<String> lines=cfg.isList(path+".lore")?cfg.getStringList(path+".lore"):lore;
         im.setLore(lines.stream().map(s->color(repl(s,vars))).toList());
-        if (im instanceof SkullMeta skull) {
+        if (custom==null && im instanceof SkullMeta skull) {
             String owner=cfg.getString(path+".head-owner", "").trim();
             String uuid=cfg.getString(path+".head-uuid", "").trim();
             if (!uuid.isBlank()) {
@@ -136,6 +145,42 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
         set(inv,getConfig().getInt(path+".back.slot",22),item(path+".back",getConfig(),Material.ARROW,"Volver",List.of(),Map.of(),false));fill(inv,path);
         p.openInventory(inv);sound(p,"open");
     }
+    private ItemStack editorIcon(String rank) {
+        String base="ranks."+rank;
+        ItemStack it=item(base,getConfig(),Material.CHEST,rank,List.of(),Map.of("status",""),false);
+        ItemMeta meta=it.getItemMeta();
+        meta.setLore(getConfig().getStringList("rank-editor.icon-lore").stream().map(this::color).toList());
+        it.setItemMeta(meta); return it;
+    }
+    private void openRankEditor(Player p) {
+        Inventory inventory=inv(getConfig().getString("rank-editor.title","&6Editar recompensas principales"),getConfig().getInt("rank-menu.rows",3),"rank-edit",0);
+        for(String rank:RANKS) set(inventory,getConfig().getInt("ranks."+rank+".slot",-1),editorIcon(rank));
+        set(inventory,getConfig().getInt("rank-menu.back.slot",22),item("rank-menu.back",getConfig(),Material.ARROW,"Volver",List.of(),Map.of(),false));
+        fill(inventory,"rank-menu"); p.openInventory(inventory); tell(p,"editor-help");
+    }
+    private void editRankClick(Player p, InventoryClickEvent e, RewardsHolder holder) {
+        if(!p.hasPermission("bastionrewards.admin")) { tell(p,"no-permission"); return; }
+        if(e.getClick()!=ClickType.LEFT && e.getClick()!=ClickType.RIGHT) return;
+        if(e.getClickedInventory()==p.getInventory()) {
+            ItemStack source=e.getCurrentItem();
+            if(source==null || source.getType().isAir()) return;
+            holder.selected=source.clone(); holder.selected.setAmount(1); tell(p,"editor-selected"); return;
+        }
+        if(e.getClickedInventory()!=e.getView().getTopInventory()) return;
+        int slot=e.getRawSlot();
+        if(slot==getConfig().getInt("rank-menu.back.slot",22)) { Bukkit.getScheduler().runTask(this,()->openRanks(p)); return; }
+        for(String rank:RANKS) {
+            String base="ranks."+rank;
+            if(slot!=getConfig().getInt(base+".slot",-1)) continue;
+            if(e.isRightClick()) getConfig().set(base+".custom-icon",null);
+            else {
+                if(holder.selected==null) { tell(p,"editor-help"); return; }
+                getConfig().set(base+".custom-icon",holder.selected.clone());
+            }
+            saveConfig(); set(e.getView().getTopInventory(),slot,editorIcon(rank));
+            tell(p,e.isRightClick()?"editor-reset":"editor-saved"); return;
+        }
+    }
     private int maxDays(){return Math.max(1,Math.min(100,getConfig().getInt("settings.progressive-days",100)));}
     private int[] rewardSlots(){ List<Integer> list=getConfig().getIntegerList("progressive-menu.reward-slots");if(list.isEmpty())list=List.of(10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43);return list.stream().mapToInt(Integer::intValue).toArray(); }
     private String statePath(Player p){return "players."+p.getUniqueId()+".progressive";}
@@ -171,6 +216,7 @@ public final class BastionMCRewards extends JavaPlugin implements Listener, Comm
         if(!(e.getView().getTopInventory().getHolder() instanceof RewardsHolder v))return;
         // Cancela todos los clics (también shift-click, teclas numéricas, offhand y clics en el inventario inferior).
         e.setCancelled(true);
+        if(v.type.equals("rank-edit")){editRankClick(p,e,v);return;}
         if(e.getClickedInventory()!=e.getView().getTopInventory())return;
         int slot=e.getRawSlot();if(slot<0||slot>=e.getView().getTopInventory().getSize())return;
         if(v.type.equals("main")){

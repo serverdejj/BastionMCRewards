@@ -41,6 +41,12 @@ main-menu:
       - '&7Una recompensa diaria para todos.'
       - '&7Hasta el día &f100&7.'
       - '&eHaz clic para abrir el menú'
+rank-editor:
+  title: '&#FFD15B&lEditar recompensas principales'
+  icon-lore:
+    - '&eSelecciona un objeto de tu inventario.'
+    - '&aClic izquierdo: aplicar icono seleccionado.'
+    - '&cClic derecho: restaurar icono original.'
 rank-menu:
   title: '&#FFD15B&lRecompensas principales'
   rows: 3
@@ -92,6 +98,10 @@ progressive-menu:
       - '&7Progreso: &f%progress%&7/100'
       - '%status%'
 messages:
+  editor-help: '&eSelecciona un objeto de tu inventario y luego el rango que deseas editar.'
+  editor-selected: '&aObjeto seleccionado. Haz clic en un rango para aplicarlo.'
+  editor-saved: '&aIcono guardado correctamente.'
+  editor-reset: '&aIcono original restaurado.'
   prefix: '&#FFD15B&lBASTION MC &8» &r'
   no-permission: '&cNo tienes acceso a esta recompensa.'
   claimed: '&a¡Has reclamado la recompensa de &f%name%&a!'
@@ -116,8 +126,9 @@ ranks:
     permission: bastionrewards.rank.default
     material: COAL
     name: '&7&lDEFAULT'
-    lore: ['&7Recompensa diaria del rango DEFAULT', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango DEFAULT', '&7Premio: &a$500 monedas', '%status%']
+    commands:
+      - 'eco give %player% 500'
     items: []
   magma:
     slot: 11
@@ -128,48 +139,54 @@ ranks:
     # material: PLAYER_HEAD
     # head-owner: NombreDelJugador
     name: '&#FF5500&lMAGMA'
-    lore: ['&7Recompensa diaria del rango MAGMA', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango MAGMA', '&7Premio: &a$750 monedas', '%status%']
+    commands:
+      - 'eco give %player% 750'
     items: []
   piglin:
     slot: 12
     permission: bastionrewards.rank.piglin
     material: GOLD_INGOT
     name: '&#FFCF52&lPIGLIN'
-    lore: ['&7Recompensa diaria del rango PIGLIN', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango PIGLIN', '&7Premio: &a$1250 monedas', '%status%']
+    commands:
+      - 'eco give %player% 1250'
     items: []
   carmesi:
     slot: 13
     permission: bastionrewards.rank.carmesi
     material: CRIMSON_FUNGUS
     name: '&#DC3155&lCARMESÍ'
-    lore: ['&7Recompensa diaria del rango CARMESÍ', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango CARMESÍ', '&7Premio: &a$1555 monedas', '%status%']
+    commands:
+      - 'eco give %player% 1555'
     items: []
   basalto:
     slot: 14
     permission: bastionrewards.rank.basalto
     material: BASALT
     name: '&#8A8B96&lBASALTO'
-    lore: ['&7Recompensa diaria del rango BASALTO', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango BASALTO', '&7Premio: &a$2500 monedas', '%status%']
+    commands:
+      - 'eco give %player% 2500'
     items: []
   vikingo:
     slot: 15
     permission: bastionrewards.rank.vikingo
     material: NETHERITE_AXE
     name: '&#4AB5FF&lVIKINGO'
-    lore: ['&7Recompensa diaria del rango VIKINGO', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango VIKINGO', '&7Premio: &a$3333 monedas', '%status%']
+    commands:
+      - 'eco give %player% 3333'
     items: []
   bastion:
     slot: 16
     permission: bastionrewards.rank.bastion
     material: NETHER_STAR
     name: '&#FFD15B&lBASTION'
-    lore: ['&7Recompensa diaria del rango BASTION', '%status%']
-    commands: []
+    lore: ['&7Recompensa diaria del rango BASTION', '&7Premio: &a$5000 monedas', '%status%']
+    commands:
+      - 'eco give %player% 5000'
     items: []
 # Recompensas progresivas: empieza en el día 1, llega hasta 100.
 # Puedes personalizar individualmente cada día en progressive.yml.
